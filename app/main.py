@@ -7,6 +7,7 @@ from pathlib import Path
 
 from dotenv import load_dotenv
 from fastapi import FastAPI, File, HTTPException, UploadFile
+from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
 
 from app.rag import RAGService
@@ -18,6 +19,15 @@ app = FastAPI(
     version="1.0.0",
     description="Upload PDFs, retrieve relevant context, and answer questions with source citations.",
 )
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=[origin.strip() for origin in os.getenv("CORS_ORIGINS", "http://localhost:5173").split(",")],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
 rag = RAGService(os.getenv("CHROMA_DIR", "data/chroma"))
 
 
