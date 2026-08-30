@@ -3,6 +3,7 @@ from __future__ import annotations
 import os
 import shutil
 import tempfile
+from functools import lru_cache
 from pathlib import Path
 
 from dotenv import load_dotenv
@@ -28,7 +29,11 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-rag = RAGService(os.getenv("CHROMA_DIR", "data/chroma"))
+
+@lru_cache(maxsize=1)
+def get_rag_service() -> RAGService:
+    """Initialize embeddings/vector storage only when a RAG endpoint is first used."""
+    return RAGService(os.getenv("CHROMA_DIR", "data/chroma"))
 
 
 class QueryRequest(BaseModel):
@@ -52,7 +57,7 @@ def upload_document(file: UploadFile = File(...)) -> dict[str, int | str]:
         temp_path = tmp.name
 
     try:
-        chunks = rag.ingest_pdf(temp_path, file.filename or "document.pdf")
+        chunks = get_rag_service().ingest_pdf(temp_path, file.filename or "document.pdf")
     finally:
         Path(temp_path).unlink(missing_ok=True)
 
@@ -61,4 +66,4 @@ def upload_document(file: UploadFile = File(...)) -> dict[str, int | str]:
 
 @app.post("/query")
 def query_documents(payload: QueryRequest) -> dict:
-    return rag.answer(payload.question, payload.top_k)
+    return get_rag_service().answer(payload.question, payload.top_k)
