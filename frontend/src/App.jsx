@@ -19,7 +19,7 @@ export default function App() {
       const response = await fetch(`${API_URL}/documents`, { method: 'POST', body: form });
       if (!response.ok) throw new Error('Upload failed');
       const data = await response.json();
-      setStatus(`Indexed ${data.chunks_indexed ?? 'document'} chunks successfully.`);
+      setStatus(`Indexed ${data.chunks_indexed ?? 'document'} chunks from ${data.document ?? 'the PDF'}.`);
     } catch (error) {
       setStatus(error.message);
     } finally {
@@ -34,10 +34,10 @@ export default function App() {
     setAnswer('');
     setSources([]);
     try {
-      const response = await fetch(`${API_URL}/ask`, {
+      const response = await fetch(`${API_URL}/query`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ question })
+        body: JSON.stringify({ question, top_k: 4 })
       });
       if (!response.ok) throw new Error('Question request failed');
       const data = await response.json();
